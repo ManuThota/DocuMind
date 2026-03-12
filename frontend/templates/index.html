@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuMind</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="bg-mesh"></div>
+
+    <header class="topbar">
+        <div class="topbar-brand">
+            <div class="brand-icon">
+                <svg viewBox="0 0 32 32" fill="none">
+                    <path d="M16 2L27 8.5V23.5L16 30L5 23.5V8.5L16 2Z" stroke="url(#g1)" stroke-width="1.6"/>
+                    <circle cx="16" cy="16" r="5" fill="url(#g1)"/>
+                    <defs>
+                        <linearGradient id="g1" x1="5" y1="2" x2="27" y2="30" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#818cf8"/>
+                            <stop offset="100%" stop-color="#34d399"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <span class="brand-title">DocuMind</span>
+        </div>
+        <div class="status-pill">
+            <span class="status-glow" id="statusGlow"></span>
+            <span class="status-label" id="statusLabel">Ready</span>
+        </div>
+    </header>
+
+    <!--
+      LAYOUT STRATEGY:
+      .stage  = full viewport minus topbar. Houses both panels.
+      .panel-left  = starts at center (translateX(27%)), slides to x=0 on split
+      .panel-right = starts off-screen right (translateX(100vw)), slides to x=0 on split
+      Both panels are 50/54% of stage width. The slide is pure transform — no width change.
+    -->
+    <div class="stage" id="stage">
+        <input type="file" id="pdfInput" accept=".pdf" hidden multiple>
+        <input type="file" id="imgInput" accept=".jpg,.jpeg,.png,.tiff,.bmp,.gif,.webp" hidden multiple>
+
+        <!-- LEFT panel -->
+        <div class="panel panel-left" id="panelLeft">
+            <div class="card" id="card">
+
+                <div class="block">
+                    <div class="block-label">Upload Documents</div>
+                    <div class="upload-row">
+                        <button class="up-btn" id="pdfBtn" onclick="document.getElementById('pdfInput').click()">
+                            Upload PDF
+                            <div class="up-bar" id="pdfBar"></div>
+                        </button>
+                        <button class="up-btn" id="imgBtn" onclick="document.getElementById('imgInput').click()">
+                            Upload Image
+                            <div class="up-bar" id="imgBar"></div>
+                        </button>
+                    </div>
+                    <div class="file-chips" id="fileChips"></div>
+                </div>
+
+                <div class="sep"></div>
+
+                <div class="block">
+                    <div class="block-label">Ask a Question</div>
+
+                    <!-- ask-box: contenteditable for true vertical centering -->
+                    <div class="ask-box" id="askBox">
+                        <div class="ask-inner">
+                            <div id="qInput" class="q-input" contenteditable="true"
+                                data-placeholder="What would you like to know from your documents?"
+                                role="textbox" aria-multiline="true" spellcheck="true"></div>
+                        </div>
+                        <div class="ask-btn-wrap">
+                            <button class="send-btn" id="sendBtn" onclick="submitQuestion()" title="Ask">
+                                <svg class="plane-icon" viewBox="0 0 22 22" fill="none">
+                                    <path d="M19 3L3 9.5L9.5 12.5L12.5 19L19 3Z" stroke="white" stroke-width="1.7" stroke-linejoin="round"/>
+                                    <path d="M9.5 12.5L13.5 8.5" stroke="white" stroke-width="1.7" stroke-linecap="round"/>
+                                </svg>
+                                <span class="send-spin" id="sendSpin"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="meta-row">
+                        <span class="docs-stat" id="docsCountTxt">0 documents indexed</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- RIGHT panel -->
+        <div class="panel panel-right" id="panelRight">
+            <div class="answer-scroll" id="answerScroll">
+
+                <div class="a-loading" id="aLoading" style="display:none">
+                    <div class="dots"><span></span><span></span><span></span></div>
+                    <p class="dots-label" id="dotsLabel">Searching documents…</p>
+                </div>
+ 
+                <div class="a-content" id="aContent" style="display:none">
+
+                    <div class="answer-card">
+                        <div class="answer-tag">Answer</div>
+                        <div class="answer-q" id="aQ"></div>
+                        <div class="answer-body" id="aBody"></div>
+                    </div>
+
+                    <div class="ev-wrap" id="evidenceWrap" style="display:none">
+                        <div class="ev-hdr">
+                            <span class="ev-title">Source Evidence</span>
+                            <span class="ev-badge" id="evBadge"></span>
+                        </div>
+                        <div class="ev-list" id="evList"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="/static/script.js"></script>
+</body>
+</html>
