@@ -388,4 +388,4 @@ Ollama (local, no API key needed)
 
 ## 📄 License
 
-MIT License — free to use, modify, and distribute.
+Mad_titaN — free to use, modify, and distribute.
