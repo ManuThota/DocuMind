@@ -1,13 +1,13 @@
-# ──────────────────────────────────────────────────────
-# DocuMind — Docker Compose
-# ──────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────
+# DocuMind — Local Docker Compose
+# Uses Ollama locally. On Render, set GROQ_API_KEY instead.
+# ──────────────────────────────────────────────────────────────
 
 services:
 
-  # ── Ollama LLM Server ────────────────────────────────
   ollama:
     image: ollama/ollama:latest
-    container_name: documind-ollama
+    container_name: knowledge-ollama
     restart: unless-stopped
     ports:
       - "11434:11434"
@@ -16,8 +16,6 @@ services:
     environment:
       - OLLAMA_KEEP_ALIVE=24h
       - OLLAMA_NUM_PARALLEL=1
-      - OLLAMA_MAX_LOADED_MODELS=2
-      - OLLAMA_FLASH_ATTENTION=1
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 10s
@@ -25,63 +23,54 @@ services:
       retries: 15
       start_period: 10s
     networks:
-      - documind-net
+      - knowledge-net
 
-  # ── Model Pull ────────────────────────────────────────
   ollama-init:
     image: ollama/ollama:latest
-    container_name: documind-ollama-init
+    container_name: knowledge-ollama-init
     depends_on:
       ollama:
         condition: service_healthy
     entrypoint: ["/bin/sh", "-c"]
     command: >
-      "
-      export OLLAMA_HOST=http://ollama:11434 &&
-      echo '==> Pulling llama3.2:3b...' &&
+      "export OLLAMA_HOST=http://ollama:11434 &&
       ollama pull llama3.2:3b &&
-      echo '==> Pulling nomic-embed-text...' &&
       ollama pull nomic-embed-text &&
-      echo '==> Warming up llama3.2:3b...' &&
-      ollama run llama3.2:3b 'Hi' --nowordwrap &&
-      echo '==> All models ready.'
-      "
+      echo 'Models ready!'"
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
     volumes:
       - ollama-data:/root/.ollama
     networks:
-      - documind-net
+      - knowledge-net
     restart: "no"
 
-  # ── DocuMind FastAPI App ─────────────────────────────
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: documind-app
+    container_name: knowledge-app
     restart: unless-stopped
     ports:
       - "8000:8000"
     depends_on:
-      ollama:
-        condition: service_healthy
       ollama-init:
         condition: service_completed_successfully
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
       - OLLAMA_LLM_MODEL=llama3.2:3b
+      # For Groq instead of Ollama locally, uncomment:
+      # - GROQ_API_KEY=your_key_here
       - PYTHONUNBUFFERED=1
     volumes:
       - ./backend/uploads:/app/backend/uploads
       - ./backend/database:/app/backend/database
     networks:
-      - documind-net
+      - knowledge-net
 
-# ── Named volumes ─────────────────────────────────────
 volumes:
   ollama-data:
-    driver: local
 
-# ── Network ───────────────────────────────────────────
 networks:
-  documind-net:
+  knowledge-net:
     driver: bridge
