@@ -4,8 +4,8 @@ A production-grade **RAG (Retrieval Augmented Generation)** system that answers 
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  PDF / Image  →  Parse / OCR  →  Chunk  →  Batch Embed      │
-│  ChromaDB  →  BM25 Hybrid Rerank  →  llama3.2:3b  →  Answer │
+│  PDF / Image  →  Parse / OCR  →  Chunk  →  Batch Embed       │
+│  ChromaDB  →  BM25 Hybrid Rerank  →  llama3.2:3b  →  Answer  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
