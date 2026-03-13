@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
-from backend.services.embeddings import EmbeddingService
+from backend.services.embedding import EmbeddingService
 from backend.services.reranker   import BM25Reranker
 from backend.services.vector_store import VectorStore
 
