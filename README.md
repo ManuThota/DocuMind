@@ -1,34 +1,30 @@
 # 🧠 DocuMind
 
-A production-grade **RAG (Retrieval Augmented Generation)** system that answers questions from your uploaded PDFs and images using fully local, free AI — no API keys, no cloud, no cost.
+A production-grade **RAG (Retrieval Augmented Generation)** system that answers questions from your uploaded PDFs and images using fully local AI — no cloud, no API keys required for local use.
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  PDF / Image  →  Parse / OCR  →  Chunk  →  Batch Embed       │
-│  ChromaDB  →  BM25 Hybrid Rerank  →  llama3.2:3b  →  Answer  │
-└──────────────────────────────────────────────────────────────┘
+PDF / Image → Parse / OCR → Chunk → Embed
+ChromaDB → BM25 Hybrid Rerank → LLM → Answer + Page Evidence
 ```
 
 ---
 
-## ✨ Features
+## Stack
 
-| Feature | Technology |
+| Component | Technology |
 |---|---|
-| **LLM** | Ollama + llama3.2:3b (fully local, auto-detects installed model) |
-| **Embeddings** | nomic-embed-text via Ollama batch API |
-| **Vector DB** | ChromaDB (persistent, local) |
-| **PDF Parsing** | PyMuPDF — exact page numbers per chunk |
-| **OCR** | Tesseract + pytesseract |
-| **Reranking** | BM25 Hybrid (vector + lexical scores) |
-| **Evidence** | Answer-aligned, shows Page No: reference |
+| **LLM** | Groq API (cloud) or Ollama (local) |
+| **Embeddings** | fastembed in-process (cloud) or nomic-embed-text via Ollama (local) |
+| **Vector DB** | ChromaDB |
+| **PDF Parsing** | PyMuPDF with exact page number tracking |
+| **OCR** | Tesseract |
+| **Reranking** | BM25 Hybrid (vector + lexical) |
 | **Backend** | FastAPI + async Python |
-| **Frontend** | Vanilla HTML/CSS/JS — dark glass theme |
-| **Deployment** | Docker + docker-compose |
+| **Frontend** | Vanilla HTML/CSS/JS |
 
 ---
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 knowledge-assistant/
@@ -45,7 +41,7 @@ knowledge-assistant/
 │   |   └── rag_pipeline.py        # RAG orchestration + evidence alignment
 |   ├── database/
 |   |   └──vector_db               # Vector database
-|   └── uploads/
+|   └── uploads/                   # Uploaded files will be here
 ├── frontend/
 │   ├── templates/
 |   |   └──index.html              # Main UI
@@ -60,121 +56,139 @@ knowledge-assistant/
 
 ---
 
-## 🚀 Quick Start — Git Clone + Docker (Recommended)
-
-This is the easiest way to run DocuMind. Docker handles everything — Python, Tesseract, Ollama, and the app itself.
+## Deploying to HuggingFace Spaces
 
 ### Prerequisites
 
-- [Git](https://git-scm.com/downloads)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) — make sure it is running
-- At least **8 GB RAM** free (llama3.2:3b needs ~2 GB, leave room for the OS)
+- A [HuggingFace account](https://huggingface.co/join)
+- A [Groq API key](https://console.groq.com) — used as the LLM on Spaces
+- Your project pushed to GitHub
 
 ---
 
-### Step 1 — Clone the repository
+### Step 1 — Get a Groq API key
+
+1. Go to [console.groq.com](https://console.groq.com) and sign up
+2. Navigate to **API Keys** → **Create API Key**
+3. Copy the key — you will need it in Step 4
+
+---
+
+### Step 2 — Push to GitHub
 
 ```bash
-git clone https://github.com/{my_user_name}}/DocuMind.git
-cd DocuMind
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/yourusername/knowledge-assistant.git
+git push -u origin main
 ```
 
-> Replace `yourusername` with my actual GitHub username.
+---
+
+### Step 3 — Create a HuggingFace Space
+
+1. Go to [huggingface.co/spaces](https://huggingface.co/spaces) → **Create new Space**
+2. Set:
+   - **Space name**: `documind`
+   - **SDK**: Docker
+   - **Visibility**: Public
+3. Click **Create Space**
 
 ---
 
-### Step 2 — Start everything with Docker
+### Step 4 — Add your API key as a Secret
+
+1. Inside your Space → **Settings** tab
+2. Scroll to **Repository secrets** → **New secret**
+3. Set **Name** to `GROQ_API_KEY` and paste your key as the value
+4. Click **Add secret**
+
+---
+
+### Step 5 — Link your GitHub repository
+
+1. Still in **Settings** → scroll to **Linked GitHub repository**
+2. Click **Link repository** → authorise HuggingFace
+3. Select your repo and the `main` branch → **Link**
+
+The Space will start building immediately. Watch progress in the **Logs** tab.
+
+---
+
+### Step 6 — Open the app
+
+Once status changes to **Running**, click the **App** tab:
+
+```
+https://huggingface.co/spaces/yourusername/documind
+```
+
+---
+
+### Updating
+
+Any push to `main` automatically triggers a rebuild:
 
 ```bash
+git add .
+git commit -m "update"
+git push origin main
+```
+
+---
+
+## Running Locally with Docker
+
+Uses Ollama locally — no Groq key needed.
+
+### Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) running
+- 8 GB RAM available
+
+### Start
+
+```bash
+git clone https://github.com/yourusername/knowledge-assistant.git
+cd knowledge-assistant
 docker compose up --build
 ```
 
-This single command will:
-1. Build the FastAPI application image
-2. Pull and start the Ollama LLM server
-3. Automatically download `llama3.2:3b` (~2 GB) and `nomic-embed-text` (~274 MB)
-4. Start the app on **http://localhost:8000**
+On first run, Docker pulls `llama3.2:3b` (~2 GB) and `nomic-embed-text` (~274 MB). This takes several minutes depending on your connection. Subsequent starts are instant.
 
-> ⏳ **First run only:** Model downloads take 5–15 minutes depending on your internet speed. You will see `Models ready!` in the logs when done.
+Open `http://localhost:8000`
 
----
-
-### Step 3 — Open the app
-
-```
-http://localhost:8000
-```
-
-Upload a PDF or image, type a question, and get an answer with page-referenced evidence.
-
----
-
-### Step 4 — Check logs (optional)
+### Stop
 
 ```bash
-# All services
-docker compose logs -f
-
-# Just the app
-docker compose logs -f app
-
-# Just Ollama
-docker compose logs -f ollama
+docker compose down        # preserves downloaded models
+docker compose down -v     # removes everything including models
 ```
 
----
-
-### Step 5 — Stop the app
-
-```bash
-# Stop (keeps your models and data)
-docker compose down
-
-# Stop and wipe all data including downloaded models
-docker compose down -v
-```
-
----
-
-### Updating to the latest version
+### Update
 
 ```bash
 git pull origin main
 docker compose up --build
 ```
 
-> No `-v` needed when updating code — your Ollama models are preserved.
-
 ---
 
-## 💻 Local Setup (No Docker)
+## Running Locally Without Docker
 
-Use this if you prefer to run without Docker.
-
-### Step 1 — Clone the repo
+### Step 1 — Clone and install
 
 ```bash
-git clone https://github.com/{my_user_name}/DocuMind.git
-cd DocuMind
+git clone https://github.com/yourusername/knowledge-assistant.git
+cd knowledge-assistant
+
+python -m venv venv
+source venv/bin/activate       # Windows: venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-### Step 2 — Install Ollama
-
-```bash
-# macOS / Linux
-curl -fsSL https://ollama.com/install.sh | sh
-
-# Windows — download from https://ollama.com/download
-```
-
-### Step 3 — Pull models
-
-```bash
-ollama pull llama3.2:3b
-ollama pull nomic-embed-text
-```
-
-### Step 4 — Install Tesseract OCR
+### Step 2 — Install Tesseract
 
 ```bash
 # macOS
@@ -186,80 +200,77 @@ sudo apt-get install tesseract-ocr tesseract-ocr-eng
 # Windows — installer at https://github.com/UB-Mannheim/tesseract/wiki
 ```
 
-### Step 5 — Install Python dependencies
+### Step 3 — Set your Groq key
 
 ```bash
-# Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate          # macOS / Linux
-# venv\Scripts\activate           # Windows
-
-# Install
-pip install -r requirements.txt
+export GROQ_API_KEY=your_key_here    # macOS / Linux
+set GROQ_API_KEY=your_key_here       # Windows
 ```
 
-### Step 6 — Start Ollama and the app
+Or create a `.env` file in the project root:
+
+```
+GROQ_API_KEY=your_key_here
+```
+
+### Step 4 — Run
 
 ```bash
-# Terminal 1 — start Ollama
-ollama serve
-
-# Terminal 2 — start the app
 uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### Step 7 — Open in browser
-
-```
-http://localhost:8000
-```
+Open `http://localhost:8000`
 
 ---
 
-## ⚙️ Configuration
-
-All configuration is via environment variables (or edit the defaults directly).
+## Configuration
 
 | Variable | Default | Description |
 |---|---|---|
-| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL. Set to `http://ollama:11434` in Docker automatically. |
-| `OLLAMA_LLM_MODEL` | `llama3.2:3b` | LLM for answer generation. Falls back to any installed model automatically. |
-
-**Change LLM** — set the env var or edit `backend/services/rag_pipeline.py`:
-```python
-LLM_MODEL = "mistral"   # or phi3, llama3, llama3.2, etc.
-```
-
-**Change embedding model** — edit `backend/services/embeddings.py`:
-```python
-EMBEDDING_MODEL = "nomic-embed-text"
-```
-
-**Change chunk size** — edit `backend/api_routes.py`:
-```python
-chunker = TextChunker(chunk_size=600, chunk_overlap=60)
-```
-Larger chunks = more context per card. Smaller = faster embedding and more granular evidence.
+| `GROQ_API_KEY` | — | Required for HF Spaces and local-no-Docker mode |
+| `GROQ_MODEL` | `llama-3.1-8b-instant` | Groq model to use |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Set automatically by docker-compose |
+| `OLLAMA_LLM_MODEL` | `llama3.2:3b` | Ollama model for local Docker mode |
 
 ---
 
-## 🔌 API Reference
+## Troubleshooting
+
+**"No LLM configured"**
+`GROQ_API_KEY` is not set. Add it under Space → Settings → Repository secrets.
+
+**"Invalid GROQ_API_KEY"**
+The key was copied incorrectly. Regenerate it at [console.groq.com](https://console.groq.com).
+
+**"Groq rate limit hit"**
+The free tier allows approximately 30 requests per minute. Wait a moment and retry.
+
+**Space stuck on Building**
+Open the **Logs** tab inside your Space to see the error.
+
+**No text extracted from PDF**
+The PDF is likely scanned (image-based). Upload the pages as images instead — Tesseract OCR will handle them.
+
+**Local Docker — models not downloading**
+```bash
+docker compose logs -f ollama-init
+docker exec -it knowledge-ollama ollama list
+```
+
+**ChromaDB error on restart**
+```bash
+rm -rf backend/database/vector_db/
+```
+The database rebuilds automatically on next upload.
+
+---
+
+## API Reference
 
 ### Upload a document
 ```http
 POST /api/v1/upload
 Content-Type: multipart/form-data
-
-file: <PDF or image>
-```
-```json
-{
-  "message": "Document processed successfully",
-  "filename": "report.pdf",
-  "chunks_created": 87,
-  "characters_extracted": 42310,
-  "file_type": "pdf"
-}
 ```
 
 ### Ask a question
@@ -268,19 +279,6 @@ POST /api/v1/ask
 Content-Type: application/json
 
 { "question": "What are the key findings?", "top_k": 5 }
-```
-```json
-{
-  "answer": "The key findings are...",
-  "sources": [
-    {
-      "text": "...chunk text...",
-      "source": "report.pdf",
-      "page": "14",
-      "score": 0.812
-    }
-  ]
-}
 ```
 
 ### List documents
@@ -300,92 +298,6 @@ POST /api/v1/reset
 
 ---
 
-## 🛠️ Troubleshooting
-
-**Ollama not connecting**
-```bash
-# Check Ollama is running
-curl http://localhost:11434/api/tags
-
-# Start it manually
-ollama serve
-```
-
-**Models not downloading in Docker**
-```bash
-# Watch the init container
-docker compose logs -f ollama-init
-
-# Or pull manually inside the container
-docker exec -it knowledge-ollama ollama pull llama3.2:3b
-docker exec -it knowledge-ollama ollama pull nomic-embed-text
-```
-
-**No text extracted from PDF**
-- The PDF may be scanned (image-based). Try uploading the pages as images instead — OCR will handle it.
-- Password-protected PDFs are not supported.
-
-**Slow responses on CPU**
-- `llama3.2:3b` is the fastest supported model. Ensure `OLLAMA_NUM_PARALLEL=1` in `docker-compose.yml` so all RAM is dedicated to one request at a time.
-- A 200-page PDF takes ~8 seconds to embed (batch API), and ~20–40 seconds to generate an answer on CPU.
-
-**ChromaDB errors on restart**
-```bash
-rm -rf backend/database/vector_db/
-# Then restart — the DB is rebuilt on next upload
-```
-
-**Port 8000 already in use**
-```bash
-# Change the port in docker-compose.yml
-ports:
-  - "8080:8000"   # access on http://localhost:8080
-```
-
----
-
-## 🐳 GPU Support (NVIDIA)
-
-Uncomment the GPU section in `docker-compose.yml`:
-
-```yaml
-# Under the ollama service:
-deploy:
-  resources:
-    reservations:
-      devices:
-        - driver: nvidia
-          count: 1
-          capabilities: [gpu]
-```
-
-Then rebuild:
-```bash
-docker compose up --build
-```
-
-Generation speed improves from ~30s to ~2–3s per answer.
-
----
-
-## 📦 Tech Stack
-
-```
-FastAPI  ──  uvicorn  ──  Python 3.11
-  │
-  ├── PyMuPDF ──────────── PDF parsing with page tracking
-  ├── pytesseract ───────── OCR for images
-  ├── chromadb ──────────── Vector database (cosine similarity)
-  ├── httpx ─────────────── Async HTTP client (Ollama API)
-  └── jinja2 ────────────── HTML templating
-
-Ollama (local, no API key needed)
-  ├── llama3.2:3b ───────── Answer generation
-  └── nomic-embed-text ───── Batch vector embeddings
-```
-
----
-
-## 📄 License
+## License
 
 Mad_titaN — free to use, modify, and distribute.
