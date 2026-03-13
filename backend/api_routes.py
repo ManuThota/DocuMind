@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from backend.services.pdf_parser   import PDFParser
 from backend.services.ocr_parser   import OCRParser
 from backend.services.text_chunker import TextChunker
-from backend.services.embeddings   import EmbeddingService
+from backend.services.embedding   import EmbeddingService
 from backend.services.vector_store import VectorStore
 from backend.services.rag_pipeline import RAGPipeline
 
