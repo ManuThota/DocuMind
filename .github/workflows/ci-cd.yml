@@ -49,7 +49,7 @@ jobs:
           python -c "from backend.services.pdf_parser   import PDFParser"
           python -c "from backend.services.ocr_parser   import OCRParser"
           python -c "from backend.services.text_chunker import TextChunker"
-          python -c "from backend.services.embeddings   import EmbeddingService"
+          python -c "from backend.services.embedding   import EmbeddingService"
           python -c "from backend.services.vector_store import VectorStore"
           python -c "from backend.services.reranker     import BM25Reranker"
           python -c "from backend.services.rag_pipeline import RAGPipeline"
