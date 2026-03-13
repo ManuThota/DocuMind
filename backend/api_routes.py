@@ -36,11 +36,10 @@ rag_pipeline     = RAGPipeline(embedding_service=embedding_service, vector_store
 
 
 async def prewarm_models():
-    """Called at startup — verifies and caches model names so first upload is instant."""
+    """Pre-load embedding model at startup so first upload is instant."""
     try:
         await embedding_service.verify_model()
-        await rag_pipeline._resolve_model()
-        logger.info("Models pre-warmed")
+        logger.info("Embedding model pre-warmed")
     except Exception as e:
         logger.warning("Pre-warm failed (non-fatal): %s", e)
 
