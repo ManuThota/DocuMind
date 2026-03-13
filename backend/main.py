@@ -3,9 +3,13 @@ DocuMind — FastAPI Application Entry Point
 """
 
 import logging
+import os
 import shutil
 from contextlib import asynccontextmanager
 from pathlib import Path
+
+from dotenv import load_dotenv
+load_dotenv()   # loads .env file for local development (no effect on HF Spaces)
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,7 +37,7 @@ DB_DIR.mkdir(parents=True, exist_ok=True)
 async def lifespan(app: FastAPI):
     logger.info("🚀 Starting DocuMind...")
 
-    # Clear stale uploads
+    # Clear stale uploads from previous session
     cleared = sum(1 for f in UPLOAD_DIR.iterdir()
                   if f.is_file() and not f.unlink())
     logger.info("🗑️  Cleared %d stale upload(s)", cleared)
@@ -47,7 +51,7 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning("Could not clear vector DB: %s", e)
 
-    # Pre-warm models — verify + cache model names before first request
+    # Pre-warm embedding model so first upload is instant
     try:
         from backend.api_routes import prewarm_models
         await prewarm_models()
@@ -76,7 +80,6 @@ app.add_middleware(LargeUploadMiddleware)
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
                    allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
-# Static files + templates
 _frontend = Path(__file__).parent.parent / "frontend"
 app.mount("/static", StaticFiles(directory=str(_frontend / "static")), name="static")
 templates = Jinja2Templates(directory=str(_frontend / "templates"))
@@ -96,5 +99,6 @@ async def health():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000,
+    port = int(os.getenv("PORT", "7860"))
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=port,
                 reload=True, timeout_keep_alive=300)
