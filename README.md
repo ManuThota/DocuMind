@@ -1,3 +1,13 @@
+---
+title: DocuMind
+emoji: 🧠
+colorFrom: indigo
+colorTo: teal
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 🧠 DocuMind
 
 A production-grade **RAG (Retrieval Augmented Generation)** system that answers questions from your uploaded PDFs and images using fully local AI — no cloud, no API keys required for local use.
