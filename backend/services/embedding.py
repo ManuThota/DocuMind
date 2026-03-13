@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 # If OLLAMA_BASE_URL is explicitly set to a real host, try Ollama first.
 # On Render it won't be set (or will fail), so fastembed is used.
-OLLAMA_BASE_URL  = os.getenv("OLLAMA_BASE_URL", "")
+OLLAMA_BASE_URL  = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 FASTEMBED_MODEL  = "BAAI/bge-small-en-v1.5"   # 130MB, 384-dim, very fast
 BATCH_SIZE       = 64
 
@@ -110,7 +110,7 @@ class EmbeddingService:
             if success and len(all_embs) == total:
                 self._use_ollama = True
                 logger.info("Embedded %d via Ollama", total)
-                return all_embs 
+                return all_embs
 
         # fastembed — runs in-process, no server needed
         logger.info("Using fastembed for %d texts", total)
