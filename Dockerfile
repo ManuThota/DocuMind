@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
     tesseract-ocr-eng \
     libtesseract-dev \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     libsm6 libxext6 libxrender-dev \
     curl ca-certificates \
@@ -28,7 +28,6 @@ COPY frontend/ ./frontend/
 
 RUN mkdir -p backend/uploads backend/database/vector_db
 
-# HuggingFace Spaces runs as non-root user 1000
 RUN useradd -m -u 1000 user && chown -R user:user /app
 USER user
 
