@@ -15,20 +15,20 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
-from backend.services.embedding    import EmbeddingService
+from backend.services.embeddings   import EmbeddingService
 from backend.services.reranker     import BM25Reranker
 from backend.services.vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
 
 # ── LLM config ────────────────────────────────────────────────
-# Groq (free, fast — set GROQ_API_KEY on Render)
+# Groq — set GROQ_API_KEY env var or in .env file
 GROQ_API_KEY    = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL      = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 GROQ_URL        = "https://api.groq.com/openai/v1/chat/completions"
 
-# Ollama (local Docker fallback)
-OLLAMA_BASE_URL  = os.getenv("OLLAMA_BASE_URL", "")
+# Ollama — defaults to localhost so plain "uvicorn" local runs work automatically
+OLLAMA_BASE_URL  = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_LLM_MODEL = os.getenv("OLLAMA_LLM_MODEL", "llama3.2:3b")
 PREFERRED_MODELS = ["llama3.2:3b", "llama3.2", "llama3:latest", "llama3", "mistral", "phi3"]
 
@@ -78,25 +78,29 @@ class RAGPipeline:
                 logger.info("LLM backend: Groq (%s)", GROQ_MODEL)
                 return self._resolved_model
 
-            # Fallback: Ollama (local Docker)
-            if OLLAMA_BASE_URL:
-                try:
-                    res = await self._client.get(f"{OLLAMA_BASE_URL}/api/tags")
-                    if res.status_code == 200:
-                        available = [m["name"] for m in res.json().get("models", [])]
-                        for pref in [OLLAMA_LLM_MODEL] + PREFERRED_MODELS:
-                            base  = pref.split(":")[0]
-                            match = next((m for m in available if base in m), None)
-                            if match:
-                                self._resolved_model = f"ollama:{match}"
-                                logger.info("LLM backend: Ollama (%s)", match)
-                                return self._resolved_model
-                except Exception as e:
-                    logger.warning("Ollama check failed: %s", e)
+            # Fallback: Ollama (local uvicorn or Docker Compose)
+            try:
+                res = await self._client.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=3.0)
+                if res.status_code == 200:
+                    available = [m["name"] for m in res.json().get("models", [])]
+                    for pref in [OLLAMA_LLM_MODEL] + PREFERRED_MODELS:
+                        base  = pref.split(":")[0]
+                        match = next((m for m in available if base in m), None)
+                        if match:
+                            self._resolved_model = f"ollama:{match}"
+                            logger.info("LLM backend: Ollama (%s)", match)
+                            return self._resolved_model
+                    if available:
+                        self._resolved_model = f"ollama:{available[0]}"
+                        logger.info("LLM backend: Ollama (%s)", available[0])
+                        return self._resolved_model
+            except Exception as e:
+                logger.warning("Ollama not reachable at %s: %s", OLLAMA_BASE_URL, e)
 
             raise RuntimeError(
-                "No LLM configured. Set GROQ_API_KEY in Space → Settings → Repository Secrets, "
-                "or run Ollama locally for Docker Compose."
+                "No LLM available. Options:\n"
+                "  1. Set GROQ_API_KEY in your .env file (get one at console.groq.com)\n"
+                "  2. Run Ollama locally: ollama serve"
             )
 
     # ── Entry point ───────────────────────────────────────────
@@ -259,7 +263,7 @@ class RAGPipeline:
             return answer
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
-                raise RuntimeError("Invalid GROQ_API_KEY. Check your Render environment variables.")
+                raise RuntimeError("Invalid GROQ_API_KEY. Check your .env file or HuggingFace Space secrets.")
             if e.response.status_code == 429:
                 raise RuntimeError("Groq rate limit hit. Wait a moment and try again.")
             raise RuntimeError(f"Groq API error {e.response.status_code}: {e.response.text}")
