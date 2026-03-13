@@ -370,11 +370,13 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); -web
     font-size: 0.8rem; line-height: 1.62; color: var(--text2);
     display: -webkit-box;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
 .ev-text.expanded {
     -webkit-line-clamp: unset;
+    line-clamp: unset;
     overflow: visible;
     display: block;
 }
