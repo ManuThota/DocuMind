@@ -110,7 +110,7 @@ class EmbeddingService:
             if success and len(all_embs) == total:
                 self._use_ollama = True
                 logger.info("Embedded %d via Ollama", total)
-                return all_embs
+                return all_embs 
 
         # fastembed — runs in-process, no server needed
         logger.info("Using fastembed for %d texts", total)
